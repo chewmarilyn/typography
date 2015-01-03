@@ -1,0 +1,203 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <title>Marilyn</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap-theme.min.css">
+    <style>
+    nav {
+        padding: 1em 0;
+        background: #FCBEBB;
+    }
+    #upload-wrapper {
+        float: right;
+        position: relative;
+        top: 2em;
+    }
+    #upload-wrapper a {
+        font-size: 1.6em;
+    }
+    #upload-wrapper a:hover{
+        text-decoration: none;
+    }
+    #typoimages-wrapper {
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 2em;
+        background: #C8CBC8;
+        height: 210px;
+    }
+    #typoimages {
+    }
+    .typoimage-wrapper {
+        float: left;
+        display: inline-block;
+    }
+    .typoimage-wrapper + .typoimage-wrapper {
+        padding: 0 2em;
+    }
+    .typoimage-name {
+        position: relative;
+    }
+    .typoimage-description {
+        position: relative;
+    }
+    .typoimage-image {
+        height: 150px;
+    }
+    .canvas-container {
+        margin: auto;
+    }
+    #dropzone {
+        padding: 3em;
+    }
+    #save-buttons {
+        padding: 2em 0;
+        text-align: center;
+    }
+    #left-triangle {
+        position: fixed;
+        bottom: 10px;
+        left: 20px;
+    }
+    #right-triangle {
+        position: fixed;
+        right: 20px;
+        top: 350px;
+    }
+    </style>
+</head>
+<body>
+<img id="left-triangle" src="{% static 'chewmarilyn/img/left_triangle.png' %}">
+<img id="right-triangle" src="{% static 'chewmarilyn/img/right_triangle.png' %}">
+<nav class="" role="navigation">
+    <div class="container text-center">
+        <a href="/">
+            <img src="{% static 'chewmarilyn/logo.png' %}" height="100px">
+        </a>
+        <span id="upload-wrapper" class="fileinput-button">
+            <a id="upload-delegate" class="btn">UPLOAD</a>
+            <form class="hidden">
+                {% csrf_token %}
+                <input id="fileupload" type="file" name="image" multiple>
+            </form>
+        </span>
+    </div>
+</nav>
+<div id="typoimages-wrapper">
+    <div id="typoimages">
+        {% for image in images %}
+        <div class="typoimage-wrapper">
+            <!-- <div class="typoimage&#45;name">{{ image.name }}</div> -->
+            <!-- <div class="typoimage&#45;description">{{ image.description }}</div> -->
+            <img class="typoimage-image" src="{{ image.url }}"/>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+    <!-- The fileinput-button span is used to style the file input field as button -->
+    <div id="dropzone" class="container">
+        <div class="row">
+            <div id="dropzone-cta" class="text-center">
+                <h1>Drag your image here</h1>
+            </div>
+        </div>
+        <!-- <div id="progress" class="progress"> -->
+        <!--     <div class="progress&#45;bar progress&#45;bar&#45;success"></div> -->
+        <!-- </div> -->
+        <!-- <div id="files" class="files"></div> -->
+        <!-- <span id="user&#45;image" style="display: none;"></span> -->
+        <!-- <br> -->
+        <div class="row">
+            <canvas id="canvas"></canvas>
+        </div>
+        <div id="save-buttons" class="row">
+            <a id="save-as-png" class="btn btn-info">download as png</a>
+        </div>
+    </div>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+    <!-- The jQuery UI widget factory, can be omitted if jQuery UI is already included -->
+    <script src="{% static 'chewmarilyn/js/lib/vendor/jquery.ui.widget.js' %}"></script>
+    <!-- The Load Image plugin is included for the preview images and image resizing functionality -->
+    <script src="//blueimp.github.io/JavaScript-Load-Image/js/load-image.all.min.js"></script>
+    <!-- The Canvas to Blob plugin is included for image resizing functionality -->
+    <script src="//blueimp.github.io/JavaScript-Canvas-to-Blob/js/canvas-to-blob.min.js"></script>
+    <!-- Bootstrap JS is not required, but included for the responsive demo navigation -->
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+    <!-- The Iframe Transport is required for browsers without support for XHR file uploads -->
+    <script src="{% static 'chewmarilyn/js/lib/jquery.iframe-transport.js' %}"></script>
+    <!-- The basic File Upload plugin -->
+    <script src="{% static 'chewmarilyn/js/lib/jquery.fileupload.js' %}"></script>
+    <!-- The File Upload processing plugin -->
+    <script src="{% static 'chewmarilyn/js/lib/jquery.fileupload-process.js' %}"></script>
+    <!-- The File Upload image preview & resize plugin -->
+    <script src="{% static 'chewmarilyn/js/lib/jquery.fileupload-image.js' %}"></script>
+    <!-- The File Upload audio preview plugin -->
+    <script src="{% static 'chewmarilyn/js/lib/jquery.fileupload-audio.js' %}"></script>
+    <!-- The File Upload video preview plugin -->
+    <script src="{% static 'chewmarilyn/js/lib/jquery.fileupload-video.js' %}"></script>
+    <!-- The File Upload validation plugin -->
+    <script src="{% static 'chewmarilyn/js/lib/jquery.fileupload-validate.js' %}"></script>
+    <script src="{% static 'chewmarilyn/js/upload.js' %}"></script>
+    <script src="{% static 'chewmarilyn/js/lib/fabric.js' %}"></script>
+    <script>
+        $('#save-as-png').hide();
+        var user_canvas;
+        $.make_canvas = function(meta_data) {
+            $('#dropzone-cta').remove();
+            $('#save-as-png').show();
+            if (user_canvas) {
+                user_canvas.remove();
+            }
+            $('#canvas')[0].width = meta_data.width;
+            $('#canvas')[0].height = meta_data.height;
+            user_canvas = new fabric.Canvas('canvas');
+            console.log(meta_data);
+
+            fabric.Image.fromURL(meta_data.url, function(oimg) {
+                user_canvas.add(oimg);
+            }, {
+                selectable: false,
+                height: meta_data.height,
+                width: meta_data.width
+            });
+        };
+        $.save_as_png = function() {
+            window.location = user_canvas.toDataURL("image/png");
+        }
+        var addTypoEls = document.getElementsByClassName('typoimage-wrapper');
+        for (var i = 0; i < addTypoEls.length; i++) {
+            addTypoEls[i].onclick = function(event) {
+                the_image = event.currentTarget.getElementsByTagName('img')[0];
+                if (!user_canvas || !the_image) { return; }
+                fabric_image = new fabric.Image(the_image, {top: 10, left: 10});
+                user_canvas.add(fabric_image);
+            }
+        }
+        $('#save-as-png').click(function() {
+            $.save_as_png();
+        });
+        $('#upload-delegate').click(function() {
+            $('#fileupload').click();
+        });
+        var fit_horizontally = function() {
+            wrappers = document.getElementsByClassName('typoimage-wrapper');
+            var total_width = 0;
+            $.each(wrappers, function(i, val) {
+                total_width += val.clientWidth;
+            });
+            $('#typoimages').width(total_width);
+        }
+        fit_horizontally();
+        // var imgElement =  document.getElementById('image');
+        // var imgInstance = new fabric.Image(imgElement, {
+        //     selectable: false
+        // });
+        // imgInstance.applyFilters(canvas.renderAll.bind(canvas));
+        // canvas.add(imgInstance);
+    </script>
+</body>
+</html>
