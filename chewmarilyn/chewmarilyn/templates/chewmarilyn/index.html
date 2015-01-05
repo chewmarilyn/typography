@@ -166,7 +166,11 @@
             });
         };
         $.save_as_png = function() {
-            window.location = user_canvas.toDataURL("image/png");
+            var dataurl = user_canvas.toDataURL("image/png");
+            $.post('/download/', {data: dataurl})
+            .done(function(e) {
+                window.open(e.url);
+            })
         }
         var addTypoEls = document.getElementsByClassName('typoimage-wrapper');
         for (var i = 0; i < addTypoEls.length; i++) {

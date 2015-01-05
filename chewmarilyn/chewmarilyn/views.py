@@ -1,6 +1,10 @@
+import base64
+
 from django.conf import settings
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.http.response import JsonResponse
 from django.shortcuts import redirect, render
+from django.views.decorators.csrf import csrf_exempt
 
 from chewmarilyn.models import TypeImage, UserImage
 
@@ -27,3 +31,13 @@ def upload(request):
         image_meta = UserImage.store_image(uploaded_file)
         return JsonResponse(image_meta)
     return JsonResponse({})
+
+
+@csrf_exempt
+def download(request):
+    image_data = request.POST.get('data')
+    base64_data = image_data.split(',')[-1]
+    data = base64.b64decode(base64_data)
+    suf = SimpleUploadedFile('temp.png', data)
+    image_meta = UserImage.store_image(suf)
+    return JsonResponse(image_meta)

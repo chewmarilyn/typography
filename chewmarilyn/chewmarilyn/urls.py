@@ -8,6 +8,7 @@ urlpatterns = patterns('',
     url(r'^$', 'chewmarilyn.views.home', name='home'),
     # url(r'favicon.ico/', 'chewmarilyn.views.favicon', name='favicon'),
     url(r'^upload/$', 'chewmarilyn.views.upload', name='upload'),
+    url(r'^download/$', 'chewmarilyn.views.download', name='download'),
     # url(r'^blog/', include('blog.urls')),
 
     url(r'^admin/', include(admin.site.urls)),
